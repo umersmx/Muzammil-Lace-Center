@@ -344,8 +344,8 @@ For licensing inquiries, please contact the project owners.
 
 - 📍 **Location**: Mian Channu, Pakistan
 - 📞 **WhatsApp**: +92-300-1234567 (Example)
-- 📧 **Email**: contact@muzammillacecenter.com
-- 🌐 **Website**: muzammillacecenter.com
+- 📧 **Email**: contact@muzammillacecenter.com (Example)
+- 🌐 **Website**: muzammillacecenter.com (Example)
 
 ---
 
