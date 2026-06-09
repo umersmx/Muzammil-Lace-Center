@@ -48,17 +48,18 @@ if (isset($_GET['ajax'])) {
         foreach ($products as $product) {
             $responseHtml .= '<div class="col-md-4">';
             $responseHtml .= '<div class="card product-card animate-on-scroll">';
-            $responseHtml .= '<img src="assets/images/product-' . esc($product['id']) . '-1.svg" class="card-img-top" alt="' . esc($product['name']) . '">';
+            $responseHtml .= '<img src="assets/images/product-' . esc($product['id']) . '-1.svg" class="card-img-top" alt="' . esc($product['name']) . '" loading="lazy">';
             $responseHtml .= '<div class="card-body">';
             $responseHtml .= '<span class="badge bg-gold text-dark mb-2">' . esc($product['category_name']) . '</span>';
             $responseHtml .= '<h5 class="card-title">' . esc($product['name']) . '</h5>';
             $responseHtml .= '<p class="text-muted mb-2">' . format_currency($product['sale_price']) . ' <span class="text-decoration-line-through text-muted ms-2">' . format_currency($product['price']) . '</span></p>';
             $responseHtml .= '<div class="d-flex justify-content-between align-items-center mb-3">';
-            $responseHtml .= '<div><i class="fa fa-star text-gold"></i> ' . esc($product['rating']) . '</div>';
-            $responseHtml .= '<div><a href="product.php?id=' . esc($product['id']) . '" class="btn btn-outline-maroon btn-sm">View</a></div>';
+            $responseHtml .= '<div><i class="fa fa-star text-gold"></i> ' . number_format($product['rating'] ?? 4.8, 1) . '</div>';
+            $responseHtml .= '<div><a href="product.php?id=' . esc($product['id']) . '" class="btn btn-outline-maroon btn-sm">Quick View</a></div>';
             $responseHtml .= '</div>';
             $responseHtml .= '<div class="d-grid gap-2">';
-            $responseHtml .= '<a href="cart.php?add=' . esc($product['id']) . '" class="btn btn-gold btn-sm">Add To Cart</a>';
+            $responseHtml .= '<a href="cart.php?add=' . esc($product['id']) . '" class="btn btn-gold btn-sm ajax-add-cart"><i class="fa fa-shopping-bag me-1"></i>Add To Cart</a>';
+            $responseHtml .= '<a href="wishlist.php?add=' . esc($product['id']) . '" class="btn btn-outline-maroon btn-sm ajax-add-wishlist"><i class="fa fa-heart me-1"></i>Add To Wishlist</a>';
             $responseHtml .= '</div></div></div></div>';
         }
     }
@@ -68,61 +69,80 @@ if (isset($_GET['ajax'])) {
 
 require_once __DIR__ . '/includes/header.php';
 ?>
-<section class="section bg-light animate-on-scroll">
+<section class="section bg-bg">
     <div class="container">
+        <!-- Breadcrumb -->
+        <ul class="breadcrumb-premium animate-on-scroll">
+            <li><a href="index.php">Home</a></li>
+            <li><a href="shop.php">Shop</a></li>
+            <?php if ($category_id): ?>
+                <li><?php 
+                    $activeCat = array_filter($categories, fn($c) => $c['id'] == $category_id);
+                    echo esc(reset($activeCat)['name'] ?? ''); 
+                ?></li>
+            <?php endif; ?>
+        </ul>
+
         <div class="row gy-4">
             <div class="col-lg-3">
-                <div class="p-4 bg-white rounded-4 shadow-sm">
-                    <h4>Filters</h4>
+                <div class="filter-panel p-4 animate-on-scroll">
+                    <h4 class="mb-4" style="font-family:var(--font-heading);">Refine Selection</h4>
                     <form id="filterForm" method="get" action="shop.php">
-                        <div class="mb-3">
-                            <label class="form-label">Search</label>
-                            <input type="text" class="form-control" id="shopSearch" name="search" value="<?php echo esc($search); ?>" placeholder="Search products...">
+                        <div class="mb-4">
+                            <label class="form-label text-uppercase" style="letter-spacing:0.05em;font-size:0.8rem;color:var(--text-secondary);">Search</label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control ps-4" id="shopSearch" name="search" value="<?php echo esc($search); ?>" placeholder="Search luxury lace...">
+                                <i class="fa fa-search position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" style="font-size:0.8rem;"></i>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Category</label>
+                        <div class="mb-4">
+                            <label class="form-label text-uppercase" style="letter-spacing:0.05em;font-size:0.8rem;color:var(--text-secondary);">Category</label>
                             <select class="form-select" name="category">
-                                <option value="">All Categories</option>
+                                <option value="">All Collections</option>
                                 <?php foreach ($categories as $cat): ?>
                                     <option value="<?php echo esc($cat['id']); ?>" <?php echo $category_id === (int)$cat['id'] ? 'selected' : ''; ?>><?php echo esc($cat['name']); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Sort</label>
+                        <div class="mb-4">
+                            <label class="form-label text-uppercase" style="letter-spacing:0.05em;font-size:0.8rem;color:var(--text-secondary);">Sort By</label>
                             <select class="form-select" name="sort">
-                                <option value="latest" <?php echo $sort === 'latest' ? 'selected' : ''; ?>>Latest</option>
-                                <option value="popular" <?php echo $sort === 'popular' ? 'selected' : ''; ?>>Popular</option>
-                                <option value="price-low" <?php echo $sort === 'price-low' ? 'selected' : ''; ?>>Price Low to High</option>
-                                <option value="price-high" <?php echo $sort === 'price-high' ? 'selected' : ''; ?>>Price High to Low</option>
+                                <option value="latest" <?php echo $sort === 'latest' ? 'selected' : ''; ?>>Latest Arrivals</option>
+                                <option value="popular" <?php echo $sort === 'popular' ? 'selected' : ''; ?>>Most Popular</option>
+                                <option value="price-low" <?php echo $sort === 'price-low' ? 'selected' : ''; ?>>Price: Low to High</option>
+                                <option value="price-high" <?php echo $sort === 'price-high' ? 'selected' : ''; ?>>Price: High to Low</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-gold w-100">Apply</button>
+                        <button type="submit" class="btn btn-gold w-100">Apply Filters</button>
                     </form>
                 </div>
             </div>
             <div class="col-lg-9">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div><h2 class="mb-0">Shop Collection</h2><small class="text-muted shop-product-count"><?php echo $totalProducts; ?> products found</small></div>
+                <div class="d-flex justify-content-between align-items-center mb-4 animate-on-scroll">
+                    <div>
+                        <h2 class="mb-0" style="font-family:var(--font-heading);">Shop Collection</h2>
+                        <span class="shop-product-count"><?php echo $totalProducts; ?> luxury items found</span>
+                    </div>
                 </div>
                 <div id="searchResults" class="row g-4">
                     <?php if (empty($products)): ?>
-                        <div class="col-12"><div class="alert alert-warning">No products match your filters. Try another search.</div></div>
+                        <div class="col-12"><div class="alert alert-info border-0 shadow-sm p-4 text-center"><i class="fa fa-info-circle fa-2x mb-3 text-gold"></i><br>No products match your curated selection. Please adjust your filters.</div></div>
                     <?php endif; ?>
-                    <?php foreach ($products as $product): ?>
-                        <div class="col-md-4">
-                            <div class="card product-card animate-on-scroll">
-                                <img src="assets/images/product-<?php echo esc($product['id']); ?>-1.svg" class="card-img-top" alt="<?php echo esc($product['name']); ?>">
+                    <?php foreach ($products as $i => $product): ?>
+                        <div class="col-md-4 animate-on-scroll stagger-<?php echo ($i % 3) + 1; ?>">
+                            <div class="card product-card">
+                                <img src="assets/images/product-<?php echo esc($product['id']); ?>-1.svg" class="card-img-top" alt="<?php echo esc($product['name']); ?>" loading="lazy">
                                 <div class="card-body">
                                     <span class="badge bg-gold text-dark mb-2"><?php echo esc($product['category_name']); ?></span>
                                     <h5 class="card-title"><?php echo esc($product['name']); ?></h5>
-                                    <p class="text-muted mb-2"><?php echo format_currency($product['sale_price']); ?> <span class="text-decoration-line-through text-muted ms-2"><?php echo format_currency($product['price']); ?></span></p>
+                                    <p class="text-muted mb-2"><?php echo format_currency($product['sale_price']); ?> <span class="text-decoration-line-through text-muted ms-2" style="font-size:0.85em;"><?php echo format_currency($product['price']); ?></span></p>
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div><i class="fa fa-star text-gold"></i> <?php echo esc($product['rating']); ?></div>
-                                        <div><a href="product.php?id=<?php echo esc($product['id']); ?>" class="btn btn-outline-maroon btn-sm">View</a></div>
+                                        <div class="text-gold"><i class="fa fa-star"></i> <?php echo number_format($product['rating'] ?? 4.8, 1); ?></div>
+                                        <a href="product.php?id=<?php echo esc($product['id']); ?>" class="btn btn-outline-maroon btn-sm">Quick View</a>
                                     </div>
                                     <div class="d-grid gap-2">
-                                        <a href="cart.php?add=<?php echo esc($product['id']); ?>" class="btn btn-gold btn-sm">Add To Cart</a>
+                                        <a href="cart.php?add=<?php echo esc($product['id']); ?>" class="btn btn-gold btn-sm ajax-add-cart"><i class="fa fa-shopping-bag me-1"></i>Add To Cart</a>
+                                        <a href="wishlist.php?add=<?php echo esc($product['id']); ?>" class="btn btn-outline-maroon btn-sm ajax-add-wishlist"><i class="fa fa-heart me-1"></i>Add To Wishlist</a>
                                     </div>
                                 </div>
                             </div>
@@ -130,11 +150,11 @@ require_once __DIR__ . '/includes/header.php';
                     <?php endforeach; ?>
                 </div>
                 <?php if ($totalPages > 1): ?>
-                    <nav aria-label="Page navigation" class="mt-4">
+                    <nav aria-label="Page navigation" class="mt-5 d-flex justify-content-center animate-on-scroll">
                         <ul class="pagination">
                             <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                                 <li class="page-item <?php echo $i === $page ? 'active' : ''; ?>">
-                                    <a class="page-link" href="shop.php?<?php echo http_build_query(array_merge($_GET, ['page' => $i])); ?>"><?php echo $i; ?></a>
+                                    <a class="page-link shadow-sm" href="shop.php?<?php echo http_build_query(array_merge($_GET, ['page' => $i])); ?>"><?php echo $i; ?></a>
                                 </li>
                             <?php endfor; ?>
                         </ul>

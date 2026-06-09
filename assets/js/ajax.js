@@ -73,4 +73,80 @@ function updateSearchField() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', updateSearchField);
+document.addEventListener('DOMContentLoaded', () => {
+    updateSearchField();
+    initCartButtonInteractions();
+});
+
+function initCartButtonInteractions() {
+    document.querySelectorAll('.ajax-add-cart, .ajax-add-wishlist').forEach(btn => {
+        btn.removeEventListener('click', handleAjaxAdd);
+        btn.addEventListener('click', handleAjaxAdd);
+    });
+}
+
+function handleAjaxAdd(e) {
+    e.preventDefault();
+    const btn = e.currentTarget;
+    let url = btn.href || btn.dataset.url;
+    if (!url) return;
+    
+    url += (url.includes('?') ? '&' : '?') + 'ajax=1';
+    const isCart = btn.classList.contains('ajax-add-cart');
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+    btn.classList.add('disabled');
+    btn.style.pointerEvents = 'none';
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('disabled');
+            btn.style.pointerEvents = 'auto';
+            
+            if (data.success) {
+                const badge = document.getElementById(isCart ? 'cart-badge' : 'wishlist-badge');
+                if (badge) {
+                    badge.textContent = data.count;
+                    badge.classList.remove('pulse');
+                    void badge.offsetWidth;
+                    badge.classList.add('pulse');
+                }
+                showToast(data.message, 'success');
+            } else if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                showToast(data.message || 'Error occurred', 'error');
+            }
+        })
+        .catch(err => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('disabled');
+            btn.style.pointerEvents = 'auto';
+            showToast('Network error', 'error');
+        });
+}
+
+function showToast(message, type) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.position = 'fixed';
+        container.style.bottom = '1rem';
+        container.style.right = '1rem';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type} visible mt-2`;
+    toast.innerHTML = `<i class="fa ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}

@@ -330,6 +330,15 @@ To contribute:
 
 ---
 
+## Team & Contributors
+
+This platform is developed and maintained by:
+
+- **Khizar** — Repository Owner & Core Developer ([@KhizarDoingProgramming](https://github.com/KhizarDoingProgramming))
+- **Umer** — Project Developer & UI Designer ([@umersmx](https://github.com/umersmx))
+
+---
+
 ## License
 
 This project is proprietary software. All rights reserved by Muzammil Lace Center.

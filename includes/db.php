@@ -10,7 +10,7 @@ if (session_status() === PHP_SESSION_NONE) {
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'muzammil_lace_center');
 define('DB_USER', 'root');
-define('DB_PASS', '2405');
+define('DB_PASS', '');
 
 define('BASE_URL', rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') ?: '');
 
